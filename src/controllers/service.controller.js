@@ -68,4 +68,16 @@ module.exports = {
   listBySeller,
   removeService,
 };
+// GET /api/v1/services/:id
+async function getService(req, res) {
+  try {
+    const { id } = req.params;
+    const svc = await Service.findById(id).populate('sellerId');
+    if (!svc) return res.status(404).json({ message: 'Service not found' });
+    return res.json({ data: svc });
+  } catch (e) {
+    return res.status(400).json({ message: 'Invalid service id' });
+  }
+}
 
+module.exports.getService = getService;

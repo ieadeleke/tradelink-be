@@ -70,4 +70,16 @@ module.exports = {
   listBySeller,
   removeProduct,
 };
+// GET /api/v1/products/:id
+async function getProduct(req, res) {
+  try {
+    const { id } = req.params;
+    const prod = await Product.findById(id).populate('sellerId');
+    if (!prod) return res.status(404).json({ message: 'Product not found' });
+    return res.json({ data: prod });
+  } catch (e) {
+    return res.status(400).json({ message: 'Invalid product id' });
+  }
+}
 
+module.exports.getProduct = getProduct;

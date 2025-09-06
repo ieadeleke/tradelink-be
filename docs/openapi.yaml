@@ -119,6 +119,13 @@ components:
         quantity: { type: integer }
         description: { type: string }
         productImg: { type: string }
+    ProductPopulated:
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            sellerId:
+              $ref: '#/components/schemas/Seller'
     ProductListResponse:
       type: object
       properties:
@@ -132,6 +139,11 @@ components:
         message: { type: string }
         data:
           $ref: '#/components/schemas/Product'
+    ProductSingleResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductPopulated'
     ProductListingItem:
       type: object
       properties:
@@ -162,12 +174,24 @@ components:
         email: { type: string }
         storeName: { type: string }
         location: { type: string }
+    ServicePopulated:
+      allOf:
+        - $ref: '#/components/schemas/Service'
+        - type: object
+          properties:
+            sellerId:
+              $ref: '#/components/schemas/Seller'
     ServiceCreateResponse:
       type: object
       properties:
         message: { type: string }
         data:
           $ref: '#/components/schemas/Service'
+    ServiceSingleResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ServicePopulated'
     ServiceListingItem:
       type: object
       properties:
@@ -531,6 +555,44 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SellerProductsResponse' }
   /products/{id}:
+    get:
+      tags: [Products]
+      summary: Get single product (with seller)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Product
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductSingleResponse' }
+              example:
+                data:
+                  _id: "665f1c2a9c1234567890abcd"
+                  userId: "665f1bff9c1234567890abca"
+                  sellerId:
+                    _id: "665f1b889c1234567890ab12"
+                    userId: "665f1bff9c1234567890abca"
+                    storeName: "Acme Supplies"
+                    email: "seller@acme.com"
+                    phone: "+1-555-1234"
+                    address: "42 Market Street, Springfield"
+                    description: "Industrial tools and supplies"
+                    businessCategory: "Manufacturing"
+                    businessLevel: "SME"
+                    storeLogo: "https://res.cloudinary.com/demo/image/upload/v1/acme.png"
+                    location:
+                      city: "Springfield"
+                      state: "IL"
+                  name: "Heavy Duty Hammer"
+                  category: "Tools"
+                  price: 49.99
+                  quantity: 120
+                  description: "Forged steel head with fiberglass handle."
+                  productImg: "https://res.cloudinary.com/demo/image/upload/v1/hammer.png"
     delete:
       tags: [Products]
       summary: Delete product
@@ -598,6 +660,46 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/SellerServicesResponse' }
   /services/{id}:
+    get:
+      tags: [Services]
+      summary: Get single service (with seller)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Service
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceSingleResponse' }
+              example:
+                data:
+                  _id: "665f2d3b8aabcdef01234567"
+                  userId: "665f1bff9c1234567890abca"
+                  sellerId:
+                    _id: "665f1b889c1234567890ab12"
+                    userId: "665f1bff9c1234567890abca"
+                    storeName: "Acme Services"
+                    email: "services@acme.com"
+                    phone: "+1-555-6789"
+                    address: "100 Service Road, Springfield"
+                    description: "On-site equipment maintenance"
+                    businessCategory: "Maintenance"
+                    businessLevel: "SME"
+                    storeLogo: "https://res.cloudinary.com/demo/image/upload/v1/acme-services.png"
+                    location:
+                      city: "Springfield"
+                      state: "IL"
+                  name: "Equipment Maintenance"
+                  category: "Maintenance"
+                  price: 150
+                  description: "Preventive and corrective maintenance for industrial equipment."
+                  serviceImg: "https://res.cloudinary.com/demo/image/upload/v1/maintenance.png"
+                  email: "services@acme.com"
+                  storeName: "Acme Services"
+                  location: "Springfield, IL"
     delete:
       tags: [Services]
       summary: Delete service
