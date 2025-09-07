@@ -69,7 +69,7 @@ module.exports.replyMessage = replyMessage;
 // GET /api/v1/messages/inbox
 // List all messages sent to the logged-in user (recipient)
 async function getInbox(req, res) {
-  const msgs = await Message.find({ recipientId: req.user.sellerId }).sort({ createdAt: -1 });
+  const msgs = await Message.find({ recipientId: req.user.sellerId }).populate('senderId').sort({ createdAt: -1 });
   return res.json({ messages: msgs });
 }
 
