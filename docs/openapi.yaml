@@ -306,6 +306,13 @@ components:
               _id: { type: string }
               customerReviews: { type: string }
               comment: { type: string }
+    SellerSearchResponse:
+      type: object
+      properties:
+        sellers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Seller'
 paths:
   /auth/register:
     post:
@@ -626,6 +633,35 @@ paths:
                   reviewsCount: 0
                   rating: null
                 reviews: []
+  /sellers/search:
+    get:
+      tags: [Sellers]
+      summary: Search sellers
+      description: Search by storeName, city, state, businessCategory, or services offered.
+      parameters:
+        - in: query
+          name: query
+          required: true
+          schema: { type: string }
+          example: fashion
+      responses:
+        '200':
+          description: Sellers matching the query
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SellerSearchResponse' }
+              example:
+                sellers:
+                  - _id: "665f1b889c1234567890ab12"
+                    storeName: "Fashion Hub"
+                    email: "contact@fashionhub.com"
+                    phone: "+1-555-1100"
+                    description: "Trendy apparel and accessories"
+                    businessCategory: "Fashion"
+                    storeLogo: "https://res.cloudinary.com/demo/image/upload/v1/fashionhub.png"
+                    location:
+                      city: "Lagos"
+                      state: "LA"
   /products:
     get:
       tags: [Products]

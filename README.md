@@ -44,6 +44,8 @@ Routes Implemented
   - GET /get/profile
   - POST /profile/full (multipart; storeLogo)
   - GET /dashboard
+  - GET /public/:sellerId
+  - GET /search?query=fashion — search by storeName, city, state, businessCategory, services offered
 
 - Products (base: /api/v1/products)
   - GET /
