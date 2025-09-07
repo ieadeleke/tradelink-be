@@ -107,6 +107,49 @@ components:
           properties:
             city: { type: string }
             state: { type: string }
+        workingHours:
+          type: object
+          properties:
+            mon: { type: string, example: '09:00-17:00' }
+            tue: { type: string, example: '09:00-17:00' }
+            wed: { type: string, example: '09:00-17:00' }
+            thu: { type: string, example: '09:00-17:00' }
+            fri: { type: string, example: '09:00-17:00' }
+            sat: { type: string, example: '10:00-14:00' }
+            sun: { type: string, example: 'Closed' }
+    Review:
+      type: object
+      properties:
+        _id: { type: string }
+        userId: { type: string }
+        rating: { type: number, format: float, minimum: 1, maximum: 5 }
+        comment: { type: string }
+        createdAt: { type: string, format: date-time }
+    SellerPublicProfileResponse:
+      type: object
+      properties:
+        seller: { $ref: '#/components/schemas/Seller' }
+        products:
+          type: array
+          items: { $ref: '#/components/schemas/ProductListingItem' }
+        services:
+          type: array
+          items: { $ref: '#/components/schemas/ServiceListingItem' }
+        stats:
+          type: object
+          properties:
+            productsCount: { type: integer }
+            servicesCount: { type: integer }
+            reviewsCount: { type: integer }
+            rating: { type: number, nullable: true }
+        reviews:
+          type: array
+          items: { $ref: '#/components/schemas/Review' }
+    SellerPublicResponse:
+      type: object
+      properties:
+        seller:
+          $ref: '#/components/schemas/Seller'
     Product:
       type: object
       properties:
@@ -526,6 +569,63 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/DashboardResponse' }
+  /sellers/public/{sellerId}:
+    get:
+      tags: [Sellers]
+      summary: Get seller public profile (for buyers)
+      parameters:
+        - in: path
+          name: sellerId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Seller profile with listings and stats
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SellerPublicProfileResponse' }
+              example:
+                seller:
+                  _id: "665f1b889c1234567890ab12"
+                  userId: "665f1bff9c1234567890abca"
+                  storeName: "Acme Supplies"
+                  email: "seller@acme.com"
+                  phone: "+1-555-1234"
+                  address: "42 Market Street, Springfield"
+                  description: "Industrial tools and supplies"
+                  businessCategory: "Manufacturing"
+                  businessLevel: "SME"
+                  storeLogo: "https://res.cloudinary.com/demo/image/upload/v1/acme.png"
+                  location:
+                    city: "Springfield"
+                    state: "IL"
+                  workingHours:
+                    mon: "09:00-17:00"
+                    tue: "09:00-17:00"
+                    wed: "09:00-17:00"
+                    thu: "09:00-17:00"
+                    fri: "09:00-17:00"
+                    sat: "10:00-14:00"
+                    sun: "Closed"
+                products:
+                  - id: "665f1c2a9c1234567890abcd"
+                    name: "Heavy Duty Hammer"
+                    category: "Tools"
+                    price: 49.99
+                    quantity: 120
+                    productImg: "https://res.cloudinary.com/demo/image/upload/v1/hammer.png"
+                services:
+                  - id: "665f2d3b8aabcdef01234567"
+                    name: "Equipment Maintenance"
+                    category: "Maintenance"
+                    price: 150
+                    serviceImg: "https://res.cloudinary.com/demo/image/upload/v1/maintenance.png"
+                stats:
+                  productsCount: 1
+                  servicesCount: 1
+                  reviewsCount: 0
+                  rating: null
+                reviews: []
   /products:
     get:
       tags: [Products]

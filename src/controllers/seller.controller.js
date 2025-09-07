@@ -1,6 +1,7 @@
 const multer = require('multer');
 const Seller = require('../models/Seller');
 const Product = require('../models/Product');
+const Service = require('../models/Service');
 const Message = require('../models/Message');
 const { uploadBufferToCloudinary } = require('../utils/cloudinary');
 
@@ -69,3 +70,41 @@ module.exports = {
   dashboard,
 };
 
+// GET /api/v1/sellers/public/:sellerId
+async function getSellerPublic(req, res) {
+  try {
+    const { sellerId } = req.params;
+    const seller = await Seller.findById(sellerId);
+    if (!seller) return res.status(404).json({ message: 'Seller not found' });
+    const [products, services] = await Promise.all([
+      Product.find({ sellerId }).sort({ createdAt: -1 }),
+      Service.find({ sellerId }).sort({ createdAt: -1 }),
+    ]);
+    const productItems = products.map(p => ({
+      id: String(p._id),
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      quantity: p.quantity,
+      productImg: p.productImg,
+    }));
+    const serviceItems = services.map(s => ({
+      id: String(s._id),
+      name: s.name,
+      category: s.category,
+      price: s.price,
+      serviceImg: s.serviceImg,
+    }));
+    const stats = {
+      productsCount: products.length,
+      servicesCount: services.length,
+      reviewsCount: 0,
+      rating: null,
+    };
+    return res.json({ seller, products: productItems, services: serviceItems, stats, reviews: [] });
+  } catch (_) {
+    return res.status(400).json({ message: 'Invalid seller id' });
+  }
+}
+
+module.exports.getSellerPublic = getSellerPublic;

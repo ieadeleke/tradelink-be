@@ -15,9 +15,17 @@ const sellerSchema = new mongoose.Schema(
       city: { type: String },
       state: { type: String },
     },
+    workingHours: {
+      mon: { type: String },
+      tue: { type: String },
+      wed: { type: String },
+      thu: { type: String },
+      fri: { type: String },
+      sat: { type: String },
+      sun: { type: String },
+    },
   },
   { timestamps: true }
 );
 
 module.exports = mongoose.model('Seller', sellerSchema);
-
