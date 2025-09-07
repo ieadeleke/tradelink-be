@@ -8,5 +8,7 @@ router.post('/profile/full', authRequired, ctrl.profileFullMiddleware, ctrl.prof
 router.get('/dashboard', authRequired, ctrl.dashboard);
 // Public seller profile (for buyers)
 router.get('/public/:sellerId', ctrl.getSellerPublic);
+// Search sellers (public)
+router.get('/search', ctrl.searchSellers);
 
 module.exports = router;

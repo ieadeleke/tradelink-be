@@ -108,3 +108,50 @@ async function getSellerPublic(req, res) {
 }
 
 module.exports.getSellerPublic = getSellerPublic;
+
+// GET /api/v1/sellers/search?query=...
+async function searchSellers(req, res) {
+  try {
+    const { query } = req.query;
+    if (!query || String(query).trim() === '') {
+      return res.status(400).json({ message: 'Query is required' });
+    }
+
+    const q = String(query).trim();
+    const re = new RegExp(q, 'i');
+
+    // Find sellerIds that have services matching the query (servicesOffered)
+    const serviceSellerIds = await Service.find({ servicesOffered: re }).distinct('sellerId');
+
+    // Find sellerIds that have products matching the query (name/category/description)
+    const productSellerIds = await Product.find({
+      $or: [
+        { name: re },
+        { category: re },
+        { description: re },
+      ],
+    }).distinct('sellerId');
+
+    const filter = {
+      $or: [
+        { storeName: re },
+        { 'location.city': re },
+        { 'location.state': re },
+        { businessCategory: re },
+        { _id: { $in: [...new Set([...serviceSellerIds, ...productSellerIds])].filter(Boolean) } },
+      ],
+    };
+
+    const sellers = await Seller.find(filter)
+      .select('storeName storeLogo businessCategory location description email phone createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({ sellers });
+  } catch (e) {
+    console.error('searchSellers error:', e);
+    return res.status(500).json({ message: 'Failed to search sellers' });
+  }
+}
+
+module.exports.searchSellers = searchSellers;
