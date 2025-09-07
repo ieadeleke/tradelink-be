@@ -54,4 +54,10 @@ async function sendMessage(req, res) {
 }
 
 module.exports = { getConversations, getConversationMessages, markRead, sendMessage };
+// POST /api/v1/messages/reply
+// Alias to sendMessage, intended for seller replies
+async function replyMessage(req, res) {
+  return sendMessage(req, res);
+}
 
+module.exports.replyMessage = replyMessage;

@@ -1023,7 +1023,7 @@ paths:
   /messages/get/all/conversations/{userId}:
     get:
       tags: [Messages]
-      summary: List messages in a conversation with userId
+      summary: List full conversation with user (both directions)
       security: [{ bearerAuth: [] }]
       parameters:
         - in: path
@@ -1032,7 +1032,7 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: Messages
+          description: Messages sent and received, oldest first
           content:
             application/json:
               schema:
@@ -1041,6 +1041,20 @@ paths:
                   messages:
                     type: array
                     items: { $ref: '#/components/schemas/Message' }
+               example:
+                 messages:
+                   - _id: "666000111122233344445555"
+                     conversationId: "665fabc0dede111122223333"
+                     senderId: "sellerUserId"
+                     recipientId: "buyerUserId"
+                     content: "Hello! How can I help?"
+                     isRead: true
+                   - _id: "666000111122233344446666"
+                     conversationId: "665fabc0dede111122223333"
+                     senderId: "buyerUserId"
+                     recipientId: "sellerUserId"
+                     content: "I'm interested in your product."
+                     isRead: false
   /messages/read/{messageId}:
     patch:
       tags: [Messages]
@@ -1085,6 +1099,62 @@ paths:
                     type: object
                     properties:
                       id: { type: string }
+               example:
+                 message:
+                   id: "666000111122233344447777"
+  /messages/history/{userId}:
+    get:
+      tags: [Messages]
+      summary: Alias to list full conversation with user
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Messages sent and received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items: { $ref: '#/components/schemas/Message' }
+  /messages/reply:
+    post:
+      tags: [Messages]
+      summary: Reply to a message (seller)
+      description: Identical to send; provide `recipientId` and `content` or a `conversationId`.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                recipientId: { type: string, description: 'Required if conversationId not provided' }
+                conversationId: { type: string, description: 'If provided, recipientId can be omitted' }
+                content: { type: string }
+      responses:
+        '201':
+          description: Sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: object
+                    properties:
+                      id: { type: string }
+              example:
+                message:
+                  id: "666000111122233344448888"
   /reviews:
     post:
       tags: [Reviews]
