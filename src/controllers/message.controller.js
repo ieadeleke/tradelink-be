@@ -5,10 +5,14 @@ const User = require('../models/User');
 // GET /api/v1/messages/get/conversations
 async function getConversations(req, res) {
   const convs = await Conversation.find({ participants: req.user._id }).sort({ updatedAt: -1 });
+    console.log(convs)
   const result = [];
   for (const c of convs) {
+    console.log(c)
     const otherId = c.participants.find((p) => String(p) !== String(req.user._id));
+    console.log('check other id', otherId)
     const other = otherId ? await User.findById(otherId) : null;
+    console.log(other)
     result.push({
       id: String(c._id),
       name: other?.name || 'Customer',
@@ -61,3 +65,12 @@ async function replyMessage(req, res) {
 }
 
 module.exports.replyMessage = replyMessage;
+
+// GET /api/v1/messages/inbox
+// List all messages sent to the logged-in user (recipient)
+async function getInbox(req, res) {
+  const msgs = await Message.find({ recipientId: req.user.sellerId }).sort({ createdAt: -1 });
+  return res.json({ messages: msgs });
+}
+
+module.exports.getInbox = getInbox;

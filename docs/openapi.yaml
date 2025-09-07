@@ -1020,6 +1020,36 @@ paths:
                   conversations:
                     type: array
                     items: { $ref: '#/components/schemas/ConversationListItem' }
+  /messages/inbox:
+    get:
+      tags: [Messages]
+      summary: List messages received by current user (inbox)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Inbox messages sorted by newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items: { $ref: '#/components/schemas/Message' }
+              example:
+                messages:
+                  - _id: "666000111122233344440001"
+                    conversationId: "665fabcd0000111122223333"
+                    senderId: "buyerUserId"
+                    recipientId: "currentUserId"
+                    content: "Is this still available?"
+                    isRead: false
+                  - _id: "666000111122233344440000"
+                    conversationId: "665fabcd0000111122223333"
+                    senderId: "anotherBuyerId"
+                    recipientId: "currentUserId"
+                    content: "Can you ship internationally?"
+                    isRead: true
   /messages/get/all/conversations/{userId}:
     get:
       tags: [Messages]
@@ -1041,20 +1071,20 @@ paths:
                   messages:
                     type: array
                     items: { $ref: '#/components/schemas/Message' }
-               example:
-                 messages:
-                   - _id: "666000111122233344445555"
-                     conversationId: "665fabc0dede111122223333"
-                     senderId: "sellerUserId"
-                     recipientId: "buyerUserId"
-                     content: "Hello! How can I help?"
-                     isRead: true
-                   - _id: "666000111122233344446666"
-                     conversationId: "665fabc0dede111122223333"
-                     senderId: "buyerUserId"
-                     recipientId: "sellerUserId"
-                     content: "I'm interested in your product."
-                     isRead: false
+              example:
+                messages:
+                  - _id: "666000111122233344445555"
+                    conversationId: "665fabc0dede111122223333"
+                    senderId: "sellerUserId"
+                    recipientId: "buyerUserId"
+                    content: "Hello! How can I help?"
+                    isRead: true
+                  - _id: "666000111122233344446666"
+                    conversationId: "665fabc0dede111122223333"
+                    senderId: "buyerUserId"
+                    recipientId: "sellerUserId"
+                    content: "I'm interested in your product."
+                    isRead: false
   /messages/read/{messageId}:
     patch:
       tags: [Messages]
@@ -1099,9 +1129,9 @@ paths:
                     type: object
                     properties:
                       id: { type: string }
-               example:
-                 message:
-                   id: "666000111122233344447777"
+              example:
+                message:
+                  id: "666000111122233344447777"
   /messages/history/{userId}:
     get:
       tags: [Messages]
