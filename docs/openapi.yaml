@@ -125,6 +125,19 @@ components:
         rating: { type: number, format: float, minimum: 1, maximum: 5 }
         comment: { type: string }
         createdAt: { type: string, format: date-time }
+    ReviewCreateRequest:
+      type: object
+      required: [sellerId, rating]
+      properties:
+        sellerId: { type: string }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string }
+    ReviewCreateResponse:
+      type: object
+      properties:
+        message: { type: string }
+        data:
+          $ref: '#/components/schemas/Review'
     SellerPublicProfileResponse:
       type: object
       properties:
@@ -1072,3 +1085,21 @@ paths:
                     type: object
                     properties:
                       id: { type: string }
+  /reviews:
+    post:
+      tags: [Reviews]
+      summary: Create a review for a seller
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewCreateResponse'

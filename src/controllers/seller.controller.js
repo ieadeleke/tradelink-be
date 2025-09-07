@@ -3,6 +3,7 @@ const Seller = require('../models/Seller');
 const Product = require('../models/Product');
 const Service = require('../models/Service');
 const Message = require('../models/Message');
+const Review = require('../models/Review');
 const { uploadBufferToCloudinary } = require('../utils/cloudinary');
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -56,9 +57,14 @@ async function dashboard(req, res) {
   const sellerId = seller?._id;
   const totalProducts = await Product.countDocuments({ sellerId });
   const totalMessages = await Message.countDocuments({ recipientId: req.user._id });
-  const totalCustomerReviews = 0; // placeholder — no reviews model
+  const totalCustomerReviews = await Review.countDocuments({ sellerId });
   const recentMessages = [];
-  const customerReviews = [];
+  const reviews = await Review.find({ sellerId })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select('_id rating comment')
+    .lean();
+  const customerReviews = reviews.map(r => ({ _id: String(r._id), customerReviews: String(r.rating), comment: r.comment || '' }));
   return res.json({ totalProducts, totalMessages, totalCustomerReviews, recentMessages, customerReviews });
 }
 
@@ -76,9 +82,14 @@ async function getSellerPublic(req, res) {
     const { sellerId } = req.params;
     const seller = await Seller.findById(sellerId);
     if (!seller) return res.status(404).json({ message: 'Seller not found' });
-    const [products, services] = await Promise.all([
+    const [products, services, statsAgg, reviews] = await Promise.all([
       Product.find({ sellerId }).sort({ createdAt: -1 }),
       Service.find({ sellerId }).sort({ createdAt: -1 }),
+      Review.aggregate([
+        { $match: { sellerId: seller._id } },
+        { $group: { _id: '$sellerId', count: { $sum: 1 }, avgRating: { $avg: '$rating' } } },
+      ]),
+      Review.find({ sellerId }).sort({ createdAt: -1 }).lean(),
     ]);
     const productItems = products.map(p => ({
       id: String(p._id),
@@ -98,10 +109,10 @@ async function getSellerPublic(req, res) {
     const stats = {
       productsCount: products.length,
       servicesCount: services.length,
-      reviewsCount: 0,
-      rating: null,
+      reviewsCount: statsAgg[0]?.count || 0,
+      rating: statsAgg[0]?.avgRating != null ? Number(statsAgg[0].avgRating.toFixed(1)) : null,
     };
-    return res.json({ seller, products: productItems, services: serviceItems, stats, reviews: [] });
+    return res.json({ seller, products: productItems, services: serviceItems, stats, reviews });
   } catch (_) {
     return res.status(400).json({ message: 'Invalid seller id' });
   }

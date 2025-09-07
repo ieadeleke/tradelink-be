@@ -15,6 +15,7 @@ const sellerRoutes = require('./routes/seller.routes');
 const productRoutes = require('./routes/product.routes');
 const serviceRoutes = require('./routes/service.routes');
 const messageRoutes = require('./routes/message.routes');
+const reviewRoutes = require('./routes/review.routes');
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/v1/sellers', sellerRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/services', serviceRoutes);
 app.use('/api/v1/messages', messageRoutes);
+app.use('/api/v1/reviews', reviewRoutes);
 
 // 404 handler
 app.use((req, res) => {
