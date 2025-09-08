@@ -1,6 +1,7 @@
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 const User = require('../models/User');
+const Seller = require('../models/Seller');
 
 // GET /api/v1/messages/get/conversations
 async function getConversations(req, res) {
@@ -44,17 +45,34 @@ async function markRead(req, res) {
 async function sendMessage(req, res) {
   const { recipientId, content, conversationId } = req.body;
   if (!recipientId || !content) return res.status(400).json({ message: 'Missing fields' });
+
+  // Resolve recipient to a User _id (recipient may be a Seller _id from the frontend)
+  let recipientUserId = null;
+  try {
+    const maybeUser = await User.findById(recipientId);
+    if (maybeUser) recipientUserId = maybeUser._id;
+  } catch (_) {}
+  if (!recipientUserId) {
+    try {
+      const maybeSeller = await Seller.findById(recipientId);
+      if (maybeSeller) recipientUserId = maybeSeller.userId;
+    } catch (_) {}
+  }
+  if (!recipientUserId) return res.status(404).json({ message: 'Recipient not found' });
+
+  // Find or create conversation by user participants
   let conv = conversationId ? await Conversation.findById(conversationId) : null;
   if (!conv) {
-    conv = await Conversation.findOne({ participants: { $all: [req.user._id, recipientId] } });
+    conv = await Conversation.findOne({ participants: { $all: [req.user._id, recipientUserId] } });
   }
   if (!conv) {
-    conv = await Conversation.create({ participants: [req.user._id, recipientId], lastMessage: content });
+    conv = await Conversation.create({ participants: [req.user._id, recipientUserId], lastMessage: content });
   }
-  const msg = await Message.create({ conversationId: conv._id, senderId: req.user._id, recipientId, content });
+
+  const msg = await Message.create({ conversationId: conv._id, senderId: req.user._id, recipientId: recipientUserId, content });
   conv.lastMessage = content;
   await conv.save();
-  return res.status(201).json({ message: { id: String(msg._id) } });
+  return res.status(201).json({ message: { id: String(msg._id), conversationId: String(conv._id) } });
 }
 
 module.exports = { getConversations, getConversationMessages, markRead, sendMessage };
@@ -69,7 +87,8 @@ module.exports.replyMessage = replyMessage;
 // GET /api/v1/messages/inbox
 // List all messages sent to the logged-in user (recipient)
 async function getInbox(req, res) {
-  const msgs = await Message.find({ recipientId: req.user.sellerId }).populate('senderId').sort({ createdAt: -1 });
+  // Inbox lists messages addressed to the current user account
+  const msgs = await Message.find({ recipientId: req.user._id }).populate('senderId').sort({ createdAt: -1 });
   return res.json({ messages: msgs });
 }
 

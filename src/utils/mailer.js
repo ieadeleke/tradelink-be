@@ -58,5 +58,22 @@ async function sendResetPasswordEmail(to, token) {
   return sendMail({ to, subject: 'Reset your TradeLink password', html: resetPasswordEmailTemplate(resetUrl) });
 }
 
-module.exports = { sendVerificationEmail, sendResetPasswordEmail };
+function orderPaidTemplate({ sellerName, productName, amount, currency }) {
+  return `
+    <div style="font-family: Arial,sans-serif; line-height:1.5; color:#222">
+      <h2>New order received</h2>
+      <p>Hello ${sellerName || 'Seller'},</p>
+      <p>You have a new paid order for <strong>${productName}</strong>.</p>
+      <p>Amount: <strong>${currency} ${Number(amount).toLocaleString()}</strong></p>
+      <p>Log in to your dashboard to view details.</p>
+    </div>
+  `;
+}
 
+async function sendOrderPaidEmail(to, { sellerName, productName, amount, currency }) {
+  const subject = 'TradeLink: New paid order';
+  const html = orderPaidTemplate({ sellerName, productName, amount, currency });
+  return sendMail({ to, subject, html });
+}
+
+module.exports = { sendVerificationEmail, sendResetPasswordEmail, sendOrderPaidEmail };

@@ -100,8 +100,31 @@ module.exports = {
 async function getService(req, res) {
   try {
     const { id } = req.params;
-    const svc = await Service.findById(id).populate('sellerId');
+    let svc = await Service.findById(id).populate('sellerId');
     if (!svc) return res.status(404).json({ message: 'Service not found' });
+    // Enrich reviews with reviewer names if missing
+    if (svc.reviews && svc.reviews.length) {
+      const userIds = [
+        ...new Set(
+          svc.reviews
+            .map((r) => (r && r.userId ? String(r.userId) : null))
+            .filter(Boolean)
+        ),
+      ];
+      if (userIds.length) {
+        const users = await require('../models/User')
+          .find({ _id: { $in: userIds } }, { _id: 1, name: 1, avatarUrl: 1 })
+          .lean();
+        const detailsMap = new Map(users.map((u) => [String(u._id), { name: u.name, avatarUrl: u.avatarUrl || null }]));
+        const svcObj = svc.toObject();
+        svcObj.reviews = (svcObj.reviews || []).map((r) => ({
+          ...r,
+          name: r.name || (detailsMap.get(String(r.userId))?.name) || 'Customer',
+          avatarUrl: r.avatarUrl || (detailsMap.get(String(r.userId))?.avatarUrl) || null,
+        }));
+        return res.json({ data: svcObj });
+      }
+    }
     return res.json({ data: svc });
   } catch (e) {
     return res.status(400).json({ message: 'Invalid service id' });
@@ -174,11 +197,10 @@ async function updateWorkingHours(req, res) {
 }
 
 // PATCH /api/v1/services/:id/reviews
+// Note: any authenticated user can add a review. Do NOT require seller ownership.
 async function updateReviews(req, res) {
   try {
     const { id } = req.params;
-    const ownership = await assertOwnership(req, res, id);
-    if (!ownership.ok) return;
     // Two modes: replace entire array via `reviews`, or add one via rating/comment
     if (req.body.reviews) {
       let reviews = req.body.reviews;
@@ -198,6 +220,8 @@ async function updateReviews(req, res) {
     }
     const review = {
       userId: req.user._id,
+      name: req.user.name,
+      avatarUrl: req.user.avatarUrl,
       rating: rating,
       comment: comment,
       createdAt: new Date(),

@@ -35,6 +35,8 @@ const serviceSchema = new mongoose.Schema(
         new mongoose.Schema(
           {
             userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            name: { type: String },
+            avatarUrl: { type: String },
             rating: { type: Number, min: 1, max: 5 },
             comment: { type: String },
             createdAt: { type: Date, default: Date.now },
