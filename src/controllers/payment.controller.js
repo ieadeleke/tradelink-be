@@ -3,6 +3,7 @@ const Product = require('../models/Product');
 const Seller = require('../models/Seller');
 const Transaction = require('../models/Transaction');
 const { sendOrderPaidEmail } = require('../utils/mailer');
+const axios = require('axios');
 
 // POST /api/v1/payments/initiate (Paystack)
 // Creates a pending order and returns checkout payload incl. reference
@@ -167,4 +168,66 @@ async function paystackWebhook(req, res) {
   }
 }
 
-module.exports = { initiatePayment, flutterwaveWebhook, paystackWebhook };
+// POST /api/v1/payments/paystack/verify
+// Client-side callback can hit this to verify and update the order if webhook isn't set
+async function verifyPaystack(req, res) {
+  try {
+    const { reference } = req.body || {};
+    if (!reference) return res.status(400).json({ message: 'reference is required' });
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+    if (!secret) return res.status(500).json({ message: 'Paystack not configured' });
+
+    const resp = await axios.get(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+      headers: { Authorization: `Bearer ${secret}` },
+      timeout: 10000,
+    });
+    const data = resp.data?.data || {};
+    const status = data?.status;
+    const order = await Order.findOne({ tx_ref: reference });
+    if (!order) return res.json({ ok: true, message: 'Order not found for reference' });
+
+    if (status === 'success') {
+      // idempotent update
+      if (order.status !== 'paid') {
+        order.status = 'paid';
+        order.flw_tx_id = String(data?.id || data?.transaction || '');
+        await order.save();
+        try {
+          await Product.updateOne(
+            { _id: order.productId },
+            { $inc: { quantity: -Math.abs(order.quantity || 1) } }
+          );
+        } catch (_) {}
+        await Transaction.create({
+          sellerId: order.sellerId,
+          orderId: order._id,
+          productId: order.productId,
+          amount: order.amount,
+          currency: order.currency,
+          status: 'paid',
+        });
+        try {
+          const seller = await Seller.findById(order.sellerId);
+          const product = await Product.findById(order.productId);
+          if (seller?.email) {
+            await sendOrderPaidEmail(seller.email, {
+              sellerName: seller.storeName,
+              productName: product?.name || 'Product',
+              amount: order.amount,
+              currency: order.currency || 'NGN',
+            });
+          }
+        } catch (mailErr) {
+          console.warn('Order email failed', mailErr?.message);
+        }
+      }
+      return res.json({ ok: true, status: 'paid' });
+    }
+    return res.json({ ok: true, status: 'pending' });
+  } catch (e) {
+    console.error('verify paystack error', e?.response?.data || e.message);
+    return res.status(500).json({ message: 'Verification failed' });
+  }
+}
+
+module.exports = { initiatePayment, flutterwaveWebhook, paystackWebhook, verifyPaystack };
